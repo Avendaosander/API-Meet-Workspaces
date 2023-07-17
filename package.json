@@ -1,0 +1,36 @@
+{
+  "name": "api-meet-workspaces",
+  "version": "1.0.0",
+  "description": "Api para la plataforma de reserva de espacios de trabajo con interacción de mapas Meet Workspaces",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Avendaosander/API-Meet-Workspaces.git"
+  },
+  "keywords": [
+    "GraphQL",
+    "MongoDB",
+    "Apollo-server",
+    "Workspaces"
+  ],
+  "author": "Alexander Avendaño",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Avendaosander/API-Meet-Workspaces/issues"
+  },
+  "homepage": "https://github.com/Avendaosander/API-Meet-Workspaces#readme",
+  "dependencies": {
+    "@apollo/server": "^4.7.5",
+    "dotenv": "^16.3.1",
+    "graphql": "^16.7.1",
+    "mongoose": "^7.3.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
