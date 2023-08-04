@@ -10,6 +10,7 @@ connectDB()
 const server = new ApolloServer({
    typeDefs,
    resolvers,
+   csrfPrevention: false,
    formatError: (error) => {
      // Registro del error en la consola o archivo de registro (log file)
      console.error('Error en Apollo Server:', error);
@@ -18,14 +19,12 @@ const server = new ApolloServer({
 });
 
 const { url } = await startStandaloneServer(server, {
-   context: async ({ req, res }) => {
-      // Get the user token from the headers.
-      const token = req.headers.authorization;
+   context: async ({ req }) => {
+      const { authorization } = req.headers;
       
-      if (!!token) {
-         const decoded = jwt.verify(token, process.env.SECRETTK)
+      if (authorization) {
+         const decoded = jwt.verify(authorization, process.env.SECRETTK)
          
-         // Try to retrieve a user with the token
          const user = await Users.findById(decoded.id).lean()
          const isAdmin = user.rol === 'Admin'
 
