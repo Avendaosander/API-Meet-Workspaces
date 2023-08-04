@@ -5,28 +5,7 @@ import Workspaces from '../models/Workspaces.js'
 import Reservations from '../models/Reservations.js'
 import Comments from '../models/Comments.js'
 import jwt from 'jsonwebtoken'
-
-function sumarDuracionAHora(horaInicial, duracion) {
-	// Separa la hora y los minutos de la duración y la hora inicial
-	const [horaDuracion, minutoDuracion] = duracion.split(':').map(Number);
-	const [horaInicialNum, minutoInicial] = horaInicial.split(':').map(Number);
-
-	// Convierte la duración y la hora inicial a minutos
-	const duracionEnMinutos = horaDuracion * 60 + minutoDuracion;
-	const horaInicialEnMinutos = horaInicialNum * 60 + minutoInicial;
-
-	// Suma los minutos de la duración a los minutos de la hora inicial
-	const sumaEnMinutos = duracionEnMinutos + horaInicialEnMinutos;
-
-	// Calcula el nuevo valor de la hora y los minutos resultantes de la suma
-	const nuevaHora = Math.floor(sumaEnMinutos / 60);
-	const nuevoMinuto = sumaEnMinutos % 60;
-
-	// Formatea el resultado de la suma a una cadena de texto con el formato "HH:mm"
-	const horaSumada = `${nuevaHora.toString().padStart(2, '0')}:${nuevoMinuto.toString().padStart(2, '0')}`;
-
-	return horaSumada;
-}
+import { sumarDuracionAHora } from '../utils/helpers.js'
 
 export const resolvers = {
 	Query: {
@@ -61,7 +40,7 @@ export const resolvers = {
 				})
 			}
 			const workspace = await Workspaces.findById(_id).lean()
-			const comments = await Comments.find({user: context.user._id})
+			const comments = await Comments.find({workspace: _id})
 				.populate(
 					{ path: 'user', select: 'username' },
 				)
@@ -309,21 +288,27 @@ export const resolvers = {
 			}
 
 			const user = context.user._id
+
+			let workspaceR = await Workspaces.findById(workspace).lean();
 			
 			// Consulta las reservas existentes en la misma fecha
-			let existingReservations = await Reservations.find({ date }).lean();
+			let existingReservations = await Reservations.find({ workspace, date }).lean();
 
 			// Verifica si hay choques de horarios
-			const hasCollision = existingReservations.some(existingReservation => {
-				const { hour: hourR , duration: durationR } = existingReservation
-				const existingTime = sumarDuracionAHora(hourR, durationR)
-				return (hour >= hourR && hour < existingTime) 
-			});
+			const reservationsForSameHour = existingReservations.filter(
+				existingReservation =>
+				hour >= existingReservation.hour  &&
+					hour <=
+					sumarDuracionAHora(
+						existingReservation.hour,
+						existingReservation.duration
+					) 
+			)
 
-			if (hasCollision) {
-			  throw new GraphQLError('Este espacio de trabajo ya está ocupado');
+			if (reservationsForSameHour.length >= workspaceR.capacity) {
+				throw new GraphQLError('Se alcanzó el límite máximo de reservaciones para la misma hora.');
 			}
-			
+
 			let reservation = new Reservations({ user, workspace, date, hour, price, duration })
 			await reservation.save()
 			reservation = await Reservations.findById(reservation._id)
